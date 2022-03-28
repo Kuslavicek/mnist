@@ -4,7 +4,11 @@ import pandas as pd
 from tensorflow import keras
 from tensorflow.keras.layers import Input, Reshape, Dense,Conv2D,MaxPooling2D, Dropout, Flatten
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import os
+from tqdm import tqdm
+
+
 print(tf.test.is_built_with_cuda())
 print(tf.test.is_built_with_gpu_support())
 print(tf.test.is_gpu_available())
@@ -19,13 +23,11 @@ def preprocess_results(results):
         y.append(array)
     return np.array(y)
 
-
+#if want to pass the test labels in evaluating, uncomment the following line
+#y_test=preprocess_results(y_test)
 y_train=preprocess_results(y_train)
-y_test=preprocess_results(y_test)
-print(x_train.shape)
-print(x_test.shape)
-print(y_train.shape)
-print(y_test.shape)
+
+#Creating model or loading
 if(os.path.exists("model.h5")):
     model = keras.models.load_model("model.h5")
 else:
@@ -47,7 +49,7 @@ else:
     print(model.summary())
     model.fit(x_train, y_train, epochs=8,batch_size=16)
     print()
-print(model.evaluate(x_test, y_test))
+
     
 def get_prediction(image):
     image = np.resize(image,(1,28,28,1))
@@ -56,8 +58,19 @@ def get_prediction(image):
     prediction = np.where(prediction == np.amax(prediction))[0]
     return prediction
 
+def get_prediction_list(list):
+    results = []
+    for i in tqdm(list):
+        results.append(np.array(int(get_prediction(i))))
+    return np.array(results)
 
-print("prediction")
-print(get_prediction(x_test[0]))
-plt.imshow(x_test[0])
+# Creating confussion matrix
+predictions = get_prediction_list(x_test)
+print(type(predictions))
+print(type(y_test))
+cm = confusion_matrix(y_test,predictions)
+cmd = ConfusionMatrixDisplay(cm)
+cmd.plot()
 plt.show()
+
+
